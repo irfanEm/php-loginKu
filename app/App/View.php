@@ -4,7 +4,7 @@ namespace PROGAMERANYARAN\PHP\LOGIN\App;
 
 class View
 {
-    public static function view(string $view, array $model): void
+    public static function view(string $view, $model): void
     {
         require __DIR__ . "/../View/templates/header.php";
         require __DIR__ . "/../View/" . $view . ".php";

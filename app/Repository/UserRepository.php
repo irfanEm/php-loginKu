@@ -3,41 +3,51 @@
 namespace PROGAMERANYARAN\PHP\LOGIN\Repository;
 
 use PDO;
+use PROGAMERANYARAN\PHP\LOGIN\Domain\User;
 
 class UserRepository
 {
-    private static ?\PDO $connection;
+    private \PDO $connection;
 
-    public static function getConnection(string $env='test'): \PDO
+    public function __construct(\PDO $connection)
     {
-        if(self::$connection == null){
-            require_once __DIR__ . "/../../config/db.php";
+        $this->connection = $connection;
+    }
 
-            $config = getDatabaseConfig();
-            self::$connection = new \PDO (
-                $config['database'][$env]['url'],
-                $config['database'][$env]['username'],
-                $config['database'][$env]['password']
-            );
+    public function save(User $user): User
+    {
+        $stmt = $this->connection->prepare("INSERT INTO users(id, name, password) VALUES (?,?,?)");
+        $stmt->execute([$user->id, $user->username, $user->password]);
+        return $user;
+    }
 
+    public function update(User $user): User
+    {
+        $stmt = $this->connection->prepare("UPDATE users set username = ?, password = ? WHERE id = ?");
+        $stmt -> execute([$user->username, $user->password, $user->id]);
+        
+        return $user;
+    }
+
+    public function findById(int $id): ?User
+    {
+        $stmt = $this->connection->prepare("SELECT id, username, password FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+
+        try{
+            if($row = $stmt->fetch()){
+                $user = new User();
+                $user->id = $row['id'];
+                $user->username = $row['username'];
+                $user->password = $row['password'];
+                return $user;
+            }
+        }finally{
+            $stmt->closeCursor();
         }
-
-        return self::$connection;
     }
-
-    public static function beginTransaction()
+    public function deleteAll(): void
     {
-        self::$connection->beginTransaction();
+        $this->connection->exec("DELETE * FROM users");
     }
-
-    public static function commit()
-    {
-        self::$connection->commit();
-    }
-
-    public static function rollback()
-    {
-        self::$connection->rollBack();
-    }
-
 }

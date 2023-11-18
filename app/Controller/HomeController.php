@@ -1,12 +1,15 @@
 <?php
 
 namespace PROGAMERANYARAN\PHP\LOGIN\Controller;
+use PROGAMERANYARAN\PHP\LOGIN\App\View;
 
 class HomeController
 {
     public function index()
     {
-        echo "HomeController : index()";
+        View::view('Home/index',[
+            'title' => 'Beranda'
+        ]);
     }
 
     public function contoh()
