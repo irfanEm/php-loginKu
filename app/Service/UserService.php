@@ -10,6 +10,8 @@ use PROGAMERANYARAN\PHP\LOGIN\Model\UserDaftarRequest;
 use PROGAMERANYARAN\PHP\LOGIN\Model\UserDaftarResponse;
 use PROGAMERANYARAN\PHP\LOGIN\Model\UserLoginRequest;
 use PROGAMERANYARAN\PHP\LOGIN\Model\UserLoginResponse;
+use PROGAMERANYARAN\PHP\LOGIN\Model\UserPasswordUpdateRequest;
+use PROGAMERANYARAN\PHP\LOGIN\Model\UserPasswordUpdateResponse;
 use PROGAMERANYARAN\PHP\LOGIN\Model\UserProfileUpdateRequest;
 use PROGAMERANYARAN\PHP\LOGIN\Model\UserProfileUpdateResponse;
 use PROGAMERANYARAN\PHP\LOGIN\Repository\UserRepository;
@@ -128,5 +130,49 @@ class UserService
           {
             throw new ValidationException("Username Wajib diisi!");
           }
+    }
+
+    public function updatePassword(UserPasswordUpdateRequest $request): UserPasswordUpdateResponse
+    {
+        $this->validationUserPasswordUpdateRequest($request);
+
+        try{
+            Database::beginTransaction();
+
+            $user = $this->userRepository->findById($request->id);
+            if($user == null)
+            {
+                throw new ValidationException("User tidak ditemukan!");
+            }
+
+            if(!password_verify($request->oldPassword, $user->password))
+            {
+                throw new ValidationException("Password lama salah!");
+            }
+
+            $user->password = password_hash($request->newPassword, PASSWORD_BCRYPT);
+            $this->userRepository->update($user);
+
+            Database::commit();
+
+            $response = new UserPasswordUpdateResponse();
+            $response->user = $user;
+            return $response;
+            
+        }catch(\Exception $error){
+
+            Database::rollback();
+            throw $error;
+
+        }
+    }
+
+    private function validationUserPasswordUpdateRequest(UserPasswordUpdateRequest $request)
+    {
+        if($request->id == null || $request->oldPassword == null || $request->newPassword == null ||
+        trim($request->id) == '' || trim($request->oldPassword) == '' || trim($request->newPassword) == '')
+        {
+            throw new ValidationException("Id, Password lama dan Password baru tidak boleh kosong!");
+        }
     }
 }
